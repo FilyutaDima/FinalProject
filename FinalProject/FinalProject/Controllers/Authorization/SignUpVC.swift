@@ -8,25 +8,28 @@
 import Firebase
 import FirebaseAuth
 import UIKit
+import FirebaseSharedSwift
 
-class SignUpVC: UIViewController {
+class SignUpVC: BaseVC{
+    
     override func viewDidLoad() {
         super.viewDidLoad()
 
         startKeyboardObserver()
         hideKeyboardWhenTappedAround()
-        changeCountryCodeAction()
+        setNavigationTitle()
+        setLightTheme()
     }
     
-    private var firstname: String = ""
-    private var lastname: String = ""
+    private var userName: String = ""
     private var email: String = ""
-    private var phoneNumber: String = ""
     private var password: String = ""
+    private var phoneCode: String = ""
+    private var phoneNumber: String = ""
 
+    @IBOutlet weak var infoLabel: UILabel!
     @IBOutlet private final var rootScrollView: UIScrollView!
-    @IBOutlet private final var firstnameTextField: UITextField!
-    @IBOutlet private final var lastnameTextField: UITextField!
+    @IBOutlet private final var userNameTextField: UITextField!
     @IBOutlet private final var emailTextField: UITextField!
     @IBOutlet private final var countryDataStackView: UIStackView!
     @IBOutlet private final var countryFlagImageView: UIImageView!
@@ -34,13 +37,12 @@ class SignUpVC: UIViewController {
     @IBOutlet private final var phoneTextField: UITextField!
     @IBOutlet private final var passwordTextField: UITextField!
     @IBOutlet private final var confirmPasswordTextField: UITextField!
+    @IBOutlet weak var saveButton: UIButton!
     @IBOutlet private final var errorLabel: UILabel!
     
-    @IBAction func firstnameTextFieldChanged(_ sender: UITextField) {
-        sender.resetError()
-        errorLabel.resetError()
-    }
-    @IBAction func lastnameTextFieldChanged(_ sender: UITextField) {
+    @IBOutlet var textFieldCollection: [UITextField]!
+    
+    @IBAction func userNameTextFieldChanged(_ sender: UITextField) {
         sender.resetError()
         errorLabel.resetError()
     }
@@ -64,35 +66,52 @@ class SignUpVC: UIViewController {
     }
     
     @IBAction func addNewUserAction() {
+        
         if isVerificateData() {
-            Auth.auth().createUser(withEmail: email.trim(), password: password) { result, error in
+            Reference.auth.createUser(withEmail: email.trim(), password: password) { [weak self] result, error in
                 if let error = error {
-                    self.showError(error)
-                } else {
-                    let user = User(firstname: self.firstname, lastname: self.lastname, phoneNumber: "", email: self.email, petsID: nil)
-                    
-                    Database.database().reference().child(Constants.databaseUserTable).child(result!.user.uid).setValue(user.toDictionary)
+                    self?.showError(error)
+                }
+                
+                if let result = result,
+                   let self = self {
+                    let phoneNumber = PhoneNumber(code: self.phoneCode, number: self.phoneNumber)
+                    let contact = Contact(name: self.userName, phoneNumber: phoneNumber)
+                    let user = User(uid: result.user.uid, contact: contact, myPets: nil, myPosts: nil)
+                    let userDict = try? FirebaseDataEncoder().encode(user)
+                
+                    Reference.users.child(result.user.uid).setValue(userDict)
                 }
             }
         }
     }
     
+    private func setNavigationTitle() {
+        let titleLabel = UILabel(frame: CGRect(x: 0, y: 0, width: 150, height: 42) )
+        titleLabel.text = NavigationTitle.registration
+        titleLabel.textColor = SystemColor.black
+        titleLabel.textAlignment = .center
+        titleLabel.font = SystemFont.titleSemiBold
+        self.navigationController?.visibleViewController?.navigationItem.titleView = titleLabel
+    }
+    
+    private func setLightTheme() {
+        textFieldCollection.forEach { $0.setLightTheme() }
+        countryCodeLabel.setLightTheme(viewStyle: .basic, fontStyle: .bodyRegular)
+        saveButton.setLightTheme(style: .basic)
+        infoLabel.setLightTheme(viewStyle: .basic, fontStyle: .littleBodyRegular)
+    }
+    
     private func isVerificateData() -> Bool {
-        guard let firstname = firstnameTextField.text,
-              let lastname = lastnameTextField.text,
-              let codeCountry = countryCodeLabel.text,
+        guard let userName = userNameTextField.text,
+              let phoneCode = countryCodeLabel.text,
               let phoneNumber = phoneTextField.text,
               let email = emailTextField.text,
               let password = passwordTextField.text,
               let confirmPassword = confirmPasswordTextField.text else { return false }
         
-        if firstname.isEmpty {
-            showError(NSError(domain: "", code: CustomAuthErrorCode.missingFirstname.rawValue, userInfo: nil))
-            return false
-        }
-        
-        if lastname.isEmpty {
-            showError(NSError(domain: "", code: CustomAuthErrorCode.missingLastname.rawValue, userInfo: nil))
+        if userName.isEmpty {
+            showError(NSError(domain: "", code: CustomAuthErrorCode.missingUsername.rawValue, userInfo: nil))
             return false
         }
         
@@ -101,23 +120,17 @@ class SignUpVC: UIViewController {
             return false
         }
         
-        self.firstname = firstname
-        self.lastname = lastname
-        self.phoneNumber = "\(codeCountry)\(phoneNumber)"
+        self.userName = userName
         self.email = email
         self.password = password
+        self.phoneCode = phoneCode
+        self.phoneNumber = phoneNumber
         
         return true
     }
     
     private func showError(_ error: Error) {
-        if let errorCode = AuthErrorCode(rawValue: error._code) {
-            switch errorCode {
-            
-            default:
-                print(error)
-            }
-        } else if let errorCode = CustomAuthErrorCode(rawValue: error._code) {
+        if let errorCode = CustomAuthErrorCode(rawValue: error._code) {
             switch errorCode {
             case .missingEmail:
                 self.emailTextField.setError()
@@ -131,12 +144,9 @@ class SignUpVC: UIViewController {
             case .weakPassword:
                 self.passwordTextField.setError()
                 self.errorLabel.setError(with: .weakPassword)
-            case .missingFirstname:
-                self.firstnameTextField.setError()
-                self.errorLabel.setError(with: .missingFirstname)
-            case .missingLastname:
-                self.lastnameTextField.setError()
-                self.errorLabel.setError(with: .missingLastname)
+            case .missingUsername:
+                self.userNameTextField.setError()
+                self.errorLabel.setError(with: .missingUsername)
             case .confirmPassword:
                 self.passwordTextField.setError()
                 self.errorLabel.setError(with: .confirmPassword)
@@ -148,11 +158,6 @@ class SignUpVC: UIViewController {
         }
     }
     
-    private func changeCountryCodeAction() {
-        let tap = UITapGestureRecognizer(target: self, action: #selector(showCountryCodeSelection(_:)))
-        countryDataStackView.addGestureRecognizer(tap)
-    }
-    
     private func startKeyboardObserver() {
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow),
                                                name: UIResponder.keyboardWillShowNotification, object: nil)
@@ -160,41 +165,16 @@ class SignUpVC: UIViewController {
                                                name: UIResponder.keyboardWillHideNotification, object: nil)
     }
     
-    @objc private func showCountryCodeSelection(_ sender: UITapGestureRecognizer? = nil) {
-        let rootVC = UIViewController()
-        
-        let countryCodesPickerView = UIPickerView()
-        
-        rootVC.view.addSubview(countryCodesPickerView)
-        
-        countryCodesPickerView.dataSource = self
-        countryCodesPickerView.delegate = self
-        
-        countryCodesPickerView.centerXAnchor.constraint(equalTo: rootVC.view.centerXAnchor).isActive = true
-        countryCodesPickerView.centerYAnchor.constraint(equalTo: rootVC.view.centerYAnchor).isActive = true
-        
-        let alert = UIAlertController(title: Constants.selectCountryCode, message: "", preferredStyle: .actionSheet)
-        alert.addAction(UIAlertAction(title: Constants.apply, style: .default, handler: { _ in
-            let currentRaw = countryCodesPickerView.selectedRow(inComponent: 0)
+    @IBAction func showCountryCodeSelectionTapAction(_ sender: Any) {
+        showAlertForSelectCountry(handler: { currentRow in
+            
             let countryPhoneCodes = CountryPhoneCode.allCases.sorted(by: { $0.description < $1.description })
-            let countryPhoneCode = countryPhoneCodes[currentRaw]
+            let countryPhoneCode = countryPhoneCodes[currentRow]
             self.countryCodeLabel.text = countryPhoneCode.rawValue
             self.countryFlagImageView.image = UIImage(named: countryPhoneCode.countryCode)
-            
-        }))
-        alert.addAction(UIAlertAction(title: Constants.cancel, style: .cancel))
-        alert.setValue(rootVC, forKey: "contentViewController")
-        
-        present(alert, animated: true) {
-            let tapGesture = UITapGestureRecognizer(target: self, action: #selector(self.alertControllerBackgroundTapped))
-            alert.view.superview?.subviews[0].addGestureRecognizer(tapGesture)
-        }
+        })
     }
     
-    @objc private func alertControllerBackgroundTapped() {
-        self.dismiss(animated: true, completion: nil)
-    }
-
     @objc private func keyboardWillShow(notification: Notification) {
         guard let keyboardSize = (notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue else { return }
         let contentInsets = UIEdgeInsets(top: 0.0, left: 0.0, bottom: keyboardSize.height, right: 0.0)
@@ -210,55 +190,5 @@ class SignUpVC: UIViewController {
     
     deinit {
         print("\(SignUpVC.description()) closed")
-    }
-    
-    /*
-     // MARK: - Navigation
-
-     // In a storyboard-based application, you will often want to do a little preparation before navigation
-     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-         // Get the new view controller using segue.destination.
-         // Pass the selected object to the new view controller.
-     }
-     */
-}
-
-// MARK: - UIPickerViewDelegate, UIPickerViewDataSource
-
-extension SignUpVC: UIPickerViewDelegate, UIPickerViewDataSource {
-    func numberOfComponents(in pickerView: UIPickerView) -> Int {
-        return 1
-    }
-    
-    func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
-        return CountryPhoneCode.allCases.count
-    }
-    
-    func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
-        return CountryPhoneCode.allCases[row].description
-    }
-    
-    func pickerView(_ pickerView: UIPickerView, viewForRow row: Int, forComponent component: Int, reusing view: UIView?) -> UIView {
-        
-        let rootView = UIView(frame: CGRect(x: 0, y: 0, width: pickerView.bounds.width, height: 60))
-        
-        let countryFlagImageView = UIImageView(frame: CGRect(x: 40, y: 15, width: 30, height: 30))
-        countryFlagImageView.layer.borderWidth = 2
-        countryFlagImageView.layer.borderColor = UIColor.gray.cgColor
-        countryFlagImageView.layer.cornerRadius = 15
-        
-        let countryCodeLabel = UILabel(frame: CGRect(x: 100, y: 0, width: pickerView.bounds.width - 90, height: 60))
-        countryCodeLabel.textAlignment = .center
-        
-        let countryPhoneCodes = CountryPhoneCode.allCases.sorted(by: { $0.description < $1.description })
-        let countryPhoneCode = countryPhoneCodes[row]
-        
-        countryCodeLabel.text = countryPhoneCode.description
-        countryFlagImageView.image = UIImage(named: countryPhoneCode.countryCode)
-        
-        rootView.addSubview(countryCodeLabel)
-        rootView.addSubview(countryFlagImageView)
-        
-        return rootView
     }
 }

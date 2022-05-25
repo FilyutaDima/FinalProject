@@ -7,21 +7,24 @@
 
 import UIKit
 import FirebaseAuth
-import FirebaseFirestore
 
-class LogInVC: UIViewController {
+class LogInVC: BaseVC {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        stackView.backgroundColor = UIColor(white: 0, alpha: 0.5)
-
+        
         startKeyboardObserver()
         hideKeyboardWhenTappedAround()
+        setLightTheme()
     }
     
+    @IBOutlet weak var loginTitleLabel: UILabel!
+    @IBOutlet weak var logInButton: UIButton!
+    @IBOutlet weak var forgotPasswordLabel: UILabel!
+    @IBOutlet weak var registrationLabel: UILabel!
+    @IBOutlet weak var infoLabel: UILabel!
+    @IBOutlet var textFieldCollection: [UITextField]!
     @IBOutlet weak var rootScrollView: UIScrollView!
-    @IBOutlet weak var stackView: UIStackView!
     @IBOutlet weak var emailTextField: UITextField!
     @IBOutlet weak var passwordTextField: UITextField!
     @IBOutlet weak var errorLabel: UILabel!
@@ -29,6 +32,10 @@ class LogInVC: UIViewController {
     @IBAction func emailTextFieldChanged(_ sender: UITextField) {
         sender.resetError()
         errorLabel.resetError()
+    }
+    
+    @IBAction func forgotPasswordAction(_ sender: Any) {
+        showAlert()
     }
     
     @IBAction func passwordTextFieldChanged(_ sender: UITextField) {
@@ -41,17 +48,27 @@ class LogInVC: UIViewController {
         guard let email = emailTextField.text,
               let password = passwordTextField.text else { return }
         
-        Auth.auth().signIn(withEmail: email.trim(), password: password) { result, error in
-            
+        Reference.auth.signIn(withEmail: email.trim(), password: password) { result, error in
+        
             if let error = error {
                 self.showError(error)
-            } else {
-                
             }
         }
     }
     
+    private func setLightTheme() {
+        textFieldCollection.forEach { $0.setLightTheme() }
+        logInButton.setLightTheme(style: .basic)
+        registrationLabel.setLightTheme(viewStyle: .color, fontStyle: .littleBodySemiBold)
+        forgotPasswordLabel.setLightTheme(viewStyle: .basic, fontStyle: .littleBodyRegular)
+        loginTitleLabel.setLightTheme(viewStyle: .basic, fontStyle: .headerSemiBold)
+    }
     
+    private func showAlert() {
+        let alert = UIAlertController(title: "Функция в разработке", message: "", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Ок", style: .default))
+        present(alert, animated: true)
+    }
     
     private func showError(_ error: Error) {
         if let errorCode = CustomAuthErrorCode(rawValue: error._code) {
@@ -97,15 +114,4 @@ class LogInVC: UIViewController {
     deinit {
         print("\(LogInVC.description()) closed")
     }
-    
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destination.
-        // Pass the selected object to the new view controller.
-    }
-    */
-
 }
