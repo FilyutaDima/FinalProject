@@ -17,4 +17,22 @@ extension UIViewController {
     @objc func dismissKeyboard() {
         view.endEditing(true)
     }
+    
+    func hideViews(_ views: [UIView]) {
+        for view in views {
+            view.isHidden = true
+        }
+    }
+    
+    func insertText(_ text: String?, into label: UILabel, andShow view: UIView) {
+        
+        guard let text = text,
+              !text.trim().isEmpty else {
+            view.isHidden = true
+            return
+        }
+        
+        label.text = text
+        view.isHidden = false
+    }
 }

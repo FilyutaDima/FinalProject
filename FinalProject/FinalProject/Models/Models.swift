@@ -8,59 +8,51 @@
 import Foundation
 import UIKit
 
-enum Gender: Codable {
-    case male
-    case female
+protocol Entry {}
+
+struct Pet: Entry, Codable {
+    let uid: String
+    let type: String
+    let name: String?
+    let breed: String?
+    let gender: String
+    let age: String?
+    let specialSigns: String?
+    let history: String?
+    let character: String?
+    let arrayPhotoUrl: [String]
+    let petOwnerContact: Contact?
+    var status: String = PetStatus.normal
 }
 
-enum Section: Codable {
-    case lost
-    case found
-    case houseSearch
-}
-
-struct Notice: Codable {
-    let petID: String
-    let user: User
+struct Post: Entry, Codable {
+    let uid: String
+    let pet: Pet
     var date = Date()
     let address: Address
-    let comments: [Comment]
-    let section: Section
-}
-
-struct Pet: Codable {
-    let id: String
-    let name: String
-    let breed: String
-    let photos: [Image]
-    let gender: Gender
-    let info: String?
-    let specialSigns: String?
-}
-
-struct Image: Codable {
-    let url: String
-    let uid: String
+    let contact: Contact
+    let isStolen: Bool
 }
 
 struct Address: Codable {
-    let latitude: String
-    let longitude: String
-    let street: String
-    let house: Int
-    let sity: String
+    let latitude: Double
+    let longitude: Double
+    let addressString: String 
 }
 
-struct Comment: Codable {
-    let user: User
-    let title: String?
-    let text: String
+struct Contact: Codable {
+    let name: String
+    let phoneNumber: PhoneNumber
+}
+
+struct PhoneNumber: Codable {
+    let code: String
+    let number: String
 }
 
 struct User: Codable {
-    var firstname: String
-    var lastname: String
-    var phoneNumber: String
-    var email: String
-    let petsID: [String]?
+    let uid: String
+    let contact: Contact
+    var myPets: [String: Pet]?
+    var myPosts: [String: Post]?
 }
