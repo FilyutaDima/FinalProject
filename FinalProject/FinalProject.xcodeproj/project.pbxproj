@@ -73,7 +73,6 @@
 		0AA56559283A81E3006C0306 /* MyData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA56558283A81E3006C0306 /* MyData.swift */; };
 		0AA5655B283AAF98006C0306 /* SettingsVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA5655A283AAF98006C0306 /* SettingsVC.swift */; };
 		0AA5655D283BB421006C0306 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0AA5655C283BB420006C0306 /* Assets.xcassets */; };
-		0AA56560283C38B6006C0306 /* OnboardingVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA5655F283C38B6006C0306 /* OnboardingVC.swift */; };
 		0AAC6A5A2821893A005D0A71 /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AAC6A592821893A005D0A71 /* NetworkManager.swift */; };
 		0AADC43727F3BE99003D0BA1 /* BaseVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AADC43627F3BE99003D0BA1 /* BaseVC.swift */; };
 		0AB4C7042806EAEC005D9E16 /* DetailVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AB4C7032806EAEC005D9E16 /* DetailVC.swift */; };
@@ -141,7 +140,6 @@
 		0AA56558283A81E3006C0306 /* MyData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyData.swift; sourceTree = "<group>"; };
 		0AA5655A283AAF98006C0306 /* SettingsVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsVC.swift; sourceTree = "<group>"; };
 		0AA5655C283BB420006C0306 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		0AA5655F283C38B6006C0306 /* OnboardingVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingVC.swift; sourceTree = "<group>"; };
 		0AAC6A592821893A005D0A71 /* NetworkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkManager.swift; sourceTree = "<group>"; };
 		0AADC43627F3BE99003D0BA1 /* BaseVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseVC.swift; sourceTree = "<group>"; };
 		0AB4C7032806EAEC005D9E16 /* DetailVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailVC.swift; sourceTree = "<group>"; };
@@ -281,7 +279,6 @@
 		0A4D643427E623B700EB6871 /* Controllers */ = {
 			isa = PBXGroup;
 			children = (
-				0AA5655E283C3886006C0306 /* Onboarding */,
 				0A59A5942820F60600B4ABDE /* BaseControllers */,
 				0A4D644C27E7BABA00EB6871 /* Authorization */,
 				0A4D644B27E7BAA800EB6871 /* Main */,
@@ -447,14 +444,6 @@
 				0AA5655A283AAF98006C0306 /* SettingsVC.swift */,
 			);
 			path = Settings;
-			sourceTree = "<group>";
-		};
-		0AA5655E283C3886006C0306 /* Onboarding */ = {
-			isa = PBXGroup;
-			children = (
-				0AA5655F283C38B6006C0306 /* OnboardingVC.swift */,
-			);
-			path = Onboarding;
 			sourceTree = "<group>";
 		};
 		0AB4C7022806EAD1005D9E16 /* Detail */ = {
@@ -660,7 +649,6 @@
 				0A4D643A27E627C100EB6871 /* SignUpVC.swift in Sources */,
 				0A65A93028320FB30000930D /* URLExt.swift in Sources */,
 				0AA56559283A81E3006C0306 /* MyData.swift in Sources */,
-				0AA56560283C38B6006C0306 /* OnboardingVC.swift in Sources */,
 				0A59A5912820EF0800B4ABDE /* AuthorizationNC.swift in Sources */,
 				0A1414F92822368700D0F77D /* MyPetsVC.swift in Sources */,
 				0AA5655B283AAF98006C0306 /* SettingsVC.swift in Sources */,

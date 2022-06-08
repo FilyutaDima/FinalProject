@@ -15,6 +15,7 @@ enum Reference {
     static let auth = Auth.auth()
     static let users = Database.database().reference().child(DBCategory.users)
     static let posts = Database.database().reference().child(DBCategory.posts)
+    static let pets = Database.database().reference().child(DBCategory.pets)
     static let photos = Storage.storage().reference().child(DBCategory.photos)
 }
 
@@ -66,16 +67,16 @@ class NetworkManager {
     
     static func downloadPhoto(with pathUrl: String, completion: @escaping (_ result: Result<UIImage, Error>) -> Void) {
             
-//        if let image = CacheManager.shared.imageCache.image(withIdentifier: pathUrl) {
-//            completion(.success(image))
-//        } else {
+        if let image = CacheManager.shared.imageCache.image(withIdentifier: pathUrl) {
+            completion(.success(image))
+        } else {
             AF.request(pathUrl).responseImage(completionHandler: { response in
                 switch response.result {
                 case .success(let image): completion(.success(image))
                 case .failure(let error): completion(.failure(error))
                 }
             })
-//        }
+        }
     }
     
     static func updateData<T: Codable>(reference: DatabaseReference, key: AnyHashable,  object: T, completion: @escaping (_ result: Result<DatabaseReference, Error>) -> Void) {
@@ -104,8 +105,10 @@ class NetworkManager {
         }
     }
     
-    static func deleteData(reference: DatabaseReference, completion: @escaping (_ result: Result<DatabaseReference, Error>) -> Void) {
-        reference.removeValue { error, reference in
+    static func deleteData(reference: DatabaseReference, pathValues: [String], completion: @escaping (_ result: Result<DatabaseReference, Error>) -> Void) {
+        
+        let path = pathValues.joined(separator: "/")
+        reference.child(path).removeValue { error, reference in
             if let error = error {
                 completion(.failure(error))
                 return
@@ -114,9 +117,10 @@ class NetworkManager {
         }
     }
     
-    static func downloadData<T: Codable>(reference: DatabaseReference, modelType: T.Type, completion: @escaping (_ result: Result<T, Error>) -> Void) {
+    static func downloadData<T: Codable>(reference: DatabaseReference, pathValues: [String], modelType: T.Type, completion: @escaping (_ result: Result<T, Error>) -> Void) {
         
-        reference.getData { error, snapshot in
+        let path = pathValues.joined(separator: "/")
+        reference.child(path).getData { error, snapshot in
             if let error = error {
                 completion(.failure(error))
                 return

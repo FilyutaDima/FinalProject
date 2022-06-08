@@ -14,12 +14,11 @@ class HomeVC: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        
         registerCell()
         tabView.dataSource = self
         tabView.delegate = self
         tabView.setBackgroundColor()
-//        showOnboarding()
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -29,67 +28,10 @@ class HomeVC: UIViewController {
         }
     }
     
-    @IBOutlet weak var ondoardingView: PaperOnboarding!
     @IBOutlet weak var tabView: UICollectionView!
     @IBOutlet weak var containerPageVC: UIView!
     
     private var pageVC: HomePageVC!
-    
-    private func showOnboarding() {
-        
-        for attribute: NSLayoutConstraint.Attribute in [.left, .right, .top, .bottom] {
-            let constraint = NSLayoutConstraint(item: ondoardingView,
-                                                attribute: attribute,
-                                                relatedBy: .equal,
-                                                toItem: view,
-                                                attribute: attribute,
-                                                multiplier: 1,
-                                                constant: 0)
-            view.addConstraint(constraint)
-          }
-        
-        onboardingItem(at: 0)
-    }
-    
-    
-    func onboardingItem(at index: Int) -> OnboardingItemInfo {
-  
-          return [
-              OnboardingItemInfo(informationImage: UIImage(named: "screneLogo")!,
-                                 title: "title",
-                                 description: "description",
-                                 pageIcon: UIImage(systemName: "house.fill")!,
-                                 color: UIColor.blue,
-                                 titleColor: UIColor.green,
-                                 descriptionColor: UIColor.black,
-                                 titleFont: UIFont(name: "Rubik-Regular", size: 125)!,
-                                 descriptionFont: UIFont(name: "Rubik-Regular", size: 14)!),
-  
-              OnboardingItemInfo(informationImage: UIImage(named: "homePage")!,
-                                 title: "title",
-                                 description: "description",
-                                 pageIcon: UIImage(systemName: "house.fill")!,
-                                 color: UIColor.blue,
-                                 titleColor: UIColor.green,
-                                 descriptionColor: UIColor.black,
-                                 titleFont: UIFont(name: "Rubik-Regular", size: 125)!,
-                                 descriptionFont: UIFont(name: "Rubik-Regular", size: 14)!),
-  
-              OnboardingItemInfo(informationImage: UIImage(named: "myPets")!,
-                                 title: "title",
-                                 description: "description",
-                                 pageIcon: UIImage(systemName: "house.fill")!,
-                                 color: UIColor.blue,
-                                 titleColor: UIColor.green,
-                                 descriptionColor: UIColor.black,
-                                 titleFont: UIFont(name: "Rubik-Regular", size: 125)!,
-                                 descriptionFont: UIFont(name: "Rubik-Regular", size: 14)!),
-          ][index]
-       }
-    
-    private func registerCell() {
-        tabView.register(UINib(nibName: "TabViewCell", bundle: nil), forCellWithReuseIdentifier: reuseIdentifier)
-    }
     
     private var isFirstPage: Bool = true
     private var currentPageIndex: Int! {
@@ -106,6 +48,10 @@ class HomeVC: UIViewController {
         }
     }
     
+    private func registerCell() {
+        tabView.register(UINib(nibName: "TabViewCell", bundle: nil), forCellWithReuseIdentifier: reuseIdentifier)
+    }
+    
     // MARK: - Navigation
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
@@ -117,6 +63,8 @@ class HomeVC: UIViewController {
         }
     }
 }
+
+// MARK: - UICollectionViewDataSource
 
 extension HomeVC: UICollectionViewDataSource {
     
@@ -136,6 +84,8 @@ extension HomeVC: UICollectionViewDataSource {
     }
 }
 
+// MARK: - UICollectionViewDelegate
+
 extension HomeVC: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         
@@ -144,6 +94,8 @@ extension HomeVC: UICollectionViewDelegate {
         }
     }
 }
+
+// MARK: - UICollectionViewDelegateFlowLayout
 
 extension HomeVC: UICollectionViewDelegateFlowLayout {
     
@@ -158,6 +110,8 @@ extension HomeVC: UICollectionViewDelegateFlowLayout {
         return CGSize(width: widthPerItem, height: 50)
     }
 }
+
+// MARK: - UIPageViewControllerDelegate
 
 extension HomeVC: UIPageViewControllerDelegate {
     

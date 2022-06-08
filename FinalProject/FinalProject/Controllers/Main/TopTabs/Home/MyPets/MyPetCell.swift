@@ -27,7 +27,7 @@ class MyPetCell: UICollectionViewCell {
     
     weak var delegate: MyPetMenuActionDelegare?
     
-    func setup(with pet: Pet) {
+    func setup(with pet: Entry) {
         self.configureCell(with: pet)
         self.setupMenu(with: pet)
         let arrayPhotoUrl = pet.arrayPhotoUrl
@@ -46,7 +46,7 @@ class MyPetCell: UICollectionViewCell {
         backgroundImageView.backgroundColor = SystemColor.lightOrange
     }
     
-    private func setupMenu(with pet: Pet) {
+    private func setupMenu(with pet: Entry) {
         
         guard let delegate = delegate else { return }
 
@@ -62,19 +62,19 @@ class MyPetCell: UICollectionViewCell {
             delegate.reportMissing(pet)
         }
         
-        let setNormalStatusAction = UIAction(title: PetStatus.normal) { [weak self] _ in
+        let setNeutralStatusAction = UIAction(title: Status.neutral.title) { [weak self] _ in
             guard let self = self else { return }
-            delegate.changePetStatus(pet, PetStatus.normal, self.tag)
+            delegate.changePetStatus(pet, Status.neutral.title, self.tag)
         }
-        let setStolenStatusAction = UIAction(title: PetStatus.stolen) { _ in
-            delegate.changePetStatus(pet, PetStatus.stolen, self.tag)
-        }
-        
-        let setLostStatusAction = UIAction(title: PetStatus.lost) { _ in
-            delegate.changePetStatus(pet, PetStatus.lost, self.tag)
+        let setStolenStatusAction = UIAction(title: Status.stolen.title) { _ in
+            delegate.changePetStatus(pet, Status.stolen.title, self.tag)
         }
         
-        let changeStatusMenu = UIMenu(title: "Изменить статус питомца", children: [setNormalStatusAction, setLostStatusAction, setStolenStatusAction])
+        let setLostStatusAction = UIAction(title: Status.lost.title) { _ in
+            delegate.changePetStatus(pet, Status.lost.title, self.tag)
+        }
+        
+        let changeStatusMenu = UIMenu(title: "Изменить статус питомца", children: [setNeutralStatusAction, setLostStatusAction, setStolenStatusAction])
         
         
         let menu = UIMenu(title: "Настройки", children: [petQRCodeAction, changeStatusMenu, reportMissingAction, deletePetAction])
@@ -84,7 +84,7 @@ class MyPetCell: UICollectionViewCell {
         
     }
     
-    private func configureCell(with pet: Pet) {
+    private func configureCell(with pet: Entry) {
         
         petNameLabel.text = pet.name
         petStatusLabel.text = pet.status

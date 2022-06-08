@@ -13,7 +13,7 @@ class GridVC: BaseVC {
     
     @IBOutlet var gridView: UICollectionView!
     var section: Section?
-    var posts = [Post]()
+    var posts = [Entry]()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -28,10 +28,10 @@ class GridVC: BaseVC {
     private func configureDatabase() {
         guard let section = section else { return }
         
-        Reference.posts.child(section.rawValue).observe(.childAdded) { [weak self] snapshot in
+        Reference.posts.child(section.title).observe(.childAdded) { [weak self] snapshot in
             guard let self = self,
                   let postDict = snapshot.value as? [String: Any],
-                  let post = try? FirebaseDataDecoder().decode(Post.self, from: postDict) else { return }
+                  let post = try? FirebaseDataDecoder().decode(Entry.self, from: postDict) else { return }
             self.posts.append(post)
             let indexPath = IndexPath(row: self.posts.count - 1, section: 0)
             self.gridView.insertItems(at: [indexPath])

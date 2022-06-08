@@ -29,6 +29,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                 UserSingleton.user().setId(user.uid)
                 
                 print("user sing in")
+                
             } else {
                 let storyboard = UIStoryboard(name: "Authorization", bundle: nil)
 
@@ -50,16 +51,30 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             let host = urlComponents.host
 
             if host == Constants.hostURL {
+                
+                guard let petId = urlComponents.query else { return }
+                
+                fetchPet(with: petId)
+            }
+        }
+    }
+    
+    private func fetchPet(with id: String) {
+        NetworkManager.downloadData(reference: Reference.pets, pathValues: [id], modelType: Entry.self) { [weak self] result in
+            guard let self = self else { return }
+            
+            switch result {
+            case .failure(let error):
+                print("Function: \(#function), line: \(#line), error: \(error.localizedDescription)")
+            case .success(let entry):
+                
                 let storyboard = UIStoryboard(name: "Main", bundle: .main)
                 guard let navVC = storyboard.instantiateViewController(withIdentifier: "MainNC") as? MainNC,
                       let detailVC = storyboard.instantiateViewController(withIdentifier: "DetailVC") as? DetailVC else { return }
                 
-                guard let petString = urlComponents.query,
-                      let pet = petString.decode(to: Pet.self) else { return }
-                
-                detailVC.entry = pet
+                detailVC.entry = entry
                 detailVC.isFollowingALink = true
-                window?.rootViewController = navVC
+                self.window?.rootViewController = navVC
                 navVC.pushViewController(detailVC, animated: true)
             }
         }

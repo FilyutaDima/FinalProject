@@ -51,7 +51,7 @@ class TabViewCell: UICollectionViewCell {
     
     func configure(with pageIndex: Int) {
     
-        titleLabel.text = Section.allCases[pageIndex].rawValue
+        titleLabel.text = Section.allCases[pageIndex].title
     }
 
 }

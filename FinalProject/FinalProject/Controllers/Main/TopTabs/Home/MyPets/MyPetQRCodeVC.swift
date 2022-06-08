@@ -21,7 +21,7 @@ class MyPetQRCodeVC: UIViewController {
     
     @IBOutlet weak var qrCodeImageView: UIImageView!
     
-    var pet: Pet?
+    var pet: Entry?
     private var compressedImage: UIImage?
     
     @IBAction func saveCodeAction(_ sender: Any) {
@@ -57,18 +57,16 @@ class MyPetQRCodeVC: UIViewController {
     }
     
     private func generateQR() {
-        guard let pet = pet,
-              let petJson = String.encode(object: pet) else { return }
+        guard let pet = pet else { return }
         
         var components = URLComponents()
         components.scheme = Constants.schemeURL
         components.host = Constants.hostURL
-        components.query = petJson
+        components.query = pet.uid
         
         guard let url = components.url else { return }
         
-        let swiftLeeOrangeColor = UIColor(red: 0.93, green: 0.31, blue: 0.23, alpha: 1.00)
-        guard let qrURLImage = url.qrImage(using: swiftLeeOrangeColor) else { return }
+        guard let qrURLImage = url.qrImage(using: SystemColor.tint) else { return }
         let image = UIImage(ciImage: qrURLImage)
         qrCodeImageView.image = image
         compressImage(image)
@@ -81,6 +79,8 @@ class MyPetQRCodeVC: UIViewController {
         self.compressedImage = compressedImage
     }
 }
+
+// MARK: UIImagePickerControllerDelegate
 
 extension MyPetQRCodeVC: UIImagePickerControllerDelegate {
     @objc func image(_ image: UIImage, didFinishSavingWithError error: NSError?, contextInfo: UnsafeRawPointer) {

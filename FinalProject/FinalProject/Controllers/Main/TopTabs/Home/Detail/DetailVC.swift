@@ -70,6 +70,7 @@ class DetailVC: BaseVC {
     
     var section: Section?
     var entry: Entry?
+    
     var isFollowingALink: Bool = false
     private var phoneNumber: String?
     var arrayPhoto = [UIImage]()
@@ -87,9 +88,13 @@ class DetailVC: BaseVC {
     
     private func setup() {
         guard let entry = entry else { return }
+        let status = Status.allCases.first { $0.title == entry.status }
+        guard let status = status else { return }
         
-        generateNavigationTitle(with: entry)
-        configureViews(with: entry)
+        generateNavigationTitle(with: entry, and: status)
+        petStatusCheck(with: entry, and: status)
+        configureViews(with: entry, and: status)
+        
     }
     
     private func setLightTheme() {
@@ -103,30 +108,32 @@ class DetailVC: BaseVC {
         
     }
     
-    private func generateNavigationTitle(with entry: Entry) {
+    private func generateNavigationTitle(with entry: Entry, and status: Status) {
         
         var title = ""
         
-        if let post = entry as? Post {
-            guard let section = section else { return }
-            
-            switch section {
-            case .lost:
-                title = post.isStolen ? NavigationTitle.petStolen : NavigationTitle.petLost
+        if entry.ownerId != UserSingleton.user().getId() {
+            switch status {
+            case .neutral:
+                title = NavigationTitle.infoAboutPet
             case .notice:
                 title = NavigationTitle.petNotice
             case .houseSearch:
                 title = NavigationTitle.petHouseSearch
+            case .stolen:
+                title = NavigationTitle.petStolen
+            case .lost:
+                title = NavigationTitle.petLost
             }
-        } else if let _ = entry as? Pet {
+        } else {
             title = NavigationTitle.myPet
         }
-        
+
         setNavigationTitle(title)
     }
     
     private func setNavigationTitle(_ title: String) {
-        let titleLabel = UILabel(frame: CGRect(x: 0, y: 0, width: 150, height: 42) )
+        let titleLabel = UILabel(frame: CGRect(x: 0, y: 0, width: 300, height: 42) )
         titleLabel.text = title
         titleLabel.textColor = SystemColor.black
         titleLabel.textAlignment = .center
@@ -134,83 +141,39 @@ class DetailVC: BaseVC {
         self.navigationController?.visibleViewController?.navigationItem.titleView = titleLabel
     }
     
-    private func configureViews(with entry: Entry) {
+    private func configureViews(with entry: Entry, and status: Status) {
+        let genderText = Gender.allCases.first(where: { gender in gender.rawValue == entry.gender })?.description
+            
+        insertText(entry.date.convertToString(), into: dateLabel, andShow: dateInfoBlurView)
+        insertText(entry.name, into: petNameLabel, andShow: petNameLabel)
+        insertText(entry.age, into: ageLabel, andShow: ageView)
+        insertText(genderText, into: genderLabel, andShow: genderView)
+        insertText(entry.breed, into: breedLabel, andShow: breedView)
+        insertText(entry.character, into: characterLabel, andShow: characterStackView)
+        insertText(entry.specialSigns, into: specialSignsLabel, andShow: specialSingsStackView)
+        insertText(entry.history, into: petHistoryLabel, andShow: petHistoryStackView)
+        insertText(entry.address.addressString, into: addressLabel, andShow: addressStackView)
+        insertText(status.placeDescription, into: placeDescriptionLabel, andShow: placeDescriptionLabel)
         
-        if let post = entry as? Post {
+        contactNameLabel.text = entry.contact.name
+        let phoneNumberString = "\(entry.contact.phoneNumber.code)\(entry.contact.phoneNumber.number)"
+        self.phoneNumber = phoneNumberString
             
-            let genderText = Gender.allCases.first(where: { gender in gender.rawValue == post.pet.gender})?.description
-            
-            insertText(post.date.convertToString(), into: dateLabel, andShow: dateInfoBlurView)
-            insertText(post.pet.name, into: petNameLabel, andShow: petNameLabel)
-            insertText(post.pet.age, into: ageLabel, andShow: ageView)
-            insertText(genderText, into: genderLabel, andShow: genderView)
-            insertText(post.pet.breed, into: breedLabel, andShow: breedView)
-            insertText(post.pet.character, into: characterLabel, andShow: characterStackView)
-            insertText(post.pet.specialSigns, into: specialSignsLabel, andShow: specialSingsStackView)
-            insertText(post.pet.history, into: petHistoryLabel, andShow: petHistoryStackView)
-            insertText(post.address.addressString, into: addressLabel, andShow: addressStackView)
-            
-            contactNameLabel.text = post.contact.name
-            let phoneNumberString = "\(post.contact.phoneNumber.code)\(post.contact.phoneNumber.number)"
-            self.phoneNumber = phoneNumberString
-            
-            addMarkerToMap(with: post.address.latitude, post.address.longitude)
-            mapView.isHidden = false
-            
-            if let section = section {
-                
-                var placeDescriptionText = ""
-                
-                if section == .lost && post.isStolen {
-                    placeDescriptionText = PlaceDescription.stolen
-                } else if section == .lost && !post.isStolen {
-                    placeDescriptionText = PlaceDescription.lost
-                } else if section == .notice {
-                    placeDescriptionText = PlaceDescription.notice
-                }
-                
-                insertText(placeDescriptionText, into: placeDescriptionLabel, andShow: placeDescriptionLabel)
-                
-            }
-            
-            configurePageControl(with: post.pet.arrayPhotoUrl.count)
-            
-        } else if let pet = entry as? Pet {
-            
-            if isFollowingALink {
-                petStatusCheck(pet.status)
-                isFollowingALink = false
-            }
-            
-            let genderText = Gender.allCases.first(where: { gender in gender.rawValue == pet.gender})?.description
-            insertText(pet.name, into: petNameLabel, andShow: petNameLabel)
-            insertText(pet.age, into: ageLabel, andShow: ageView)
-            insertText(genderText, into: genderLabel, andShow: genderView)
-            insertText(pet.breed, into: breedLabel, andShow: breedView)
-            insertText(pet.character, into: characterLabel, andShow: characterStackView)
-            insertText(pet.history, into: petHistoryLabel, andShow: petHistoryStackView)
-            
-            if let petOwnerContact = pet.petOwnerContact {
-                contactNameLabel.text = petOwnerContact.name
-                let phoneNumberString = "\(petOwnerContact.phoneNumber.code)\(petOwnerContact.phoneNumber.number)"
-                self.phoneNumber = phoneNumberString
-            }
-            
-            
-            configurePageControl(with: pet.arrayPhotoUrl.count)
-        }
+        addMarkerToMap(with: entry.address.latitude, entry.address.longitude)
+        mapView.isHidden = false
+        
+        configurePageControl(with: entry.arrayPhotoUrl.count)
     }
     
-    private func petStatusCheck(_ status: String) {
-        switch status {
-        case PetStatus.normal:
-            return
-        case PetStatus.lost:
-            showAlarm(.lost)
-        case PetStatus.stolen:
-            showAlarm(.stolen)
-        default:
-            return
+    private func petStatusCheck(with entry: Entry, and status: Status) {
+        if entry.ownerId != UserSingleton.user().getId() {
+            switch status {
+            case .stolen:
+                showAlarm(.stolen)
+            case .lost:
+                showAlarm(.lost)
+            default: return
+            }
         }
     }
     
@@ -274,11 +237,9 @@ class DetailVC: BaseVC {
             
             destinationVC.delegate = self
             
-            if let post = entry as? Post {
-                destinationVC.arrayPhotoUrl = post.pet.arrayPhotoUrl
-            } else if let pet = entry as? Pet {
-                destinationVC.arrayPhotoUrl = pet.arrayPhotoUrl
-            }
+            if let entry = entry {
+                destinationVC.arrayPhotoUrl = entry.arrayPhotoUrl
+            } 
         }
     }
     
@@ -286,6 +247,8 @@ class DetailVC: BaseVC {
         print("\(DetailVC.description()) closed")
     }
 }
+
+// MARK: UIPageViewControllerDelegate
 
 extension DetailVC: UIPageViewControllerDelegate {
     
@@ -299,6 +262,8 @@ extension DetailVC: UIPageViewControllerDelegate {
         currentPhotoNumberLabel.text = pageViewController.viewControllers!.first!.view.tag.description
     }
 }
+
+// MARK: UIScrollViewDelegate
 
 extension DetailVC: UIScrollViewDelegate {
     func scrollViewDidScroll(_ scrollView: UIScrollView) {

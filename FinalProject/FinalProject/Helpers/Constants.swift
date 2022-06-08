@@ -92,10 +92,52 @@ enum AnimalType: String, CaseIterable {
 }
 
 
-enum Section: String, CaseIterable {
-    case lost = "Пропали"
-    case notice = "Замечены"
-    case houseSearch = "Ищут дом"
+//enum Section: String, CaseIterable {
+//    case lost = "Пропали"
+//    case notice = "Замечены"
+//    case houseSearch = "Ищут дом"
+//}
+
+enum Section: CaseIterable {
+    case lost
+    case notice
+    case houseSearch
+    
+    var title: String {
+        switch self {
+        case .lost: return "Пропали"
+        case .notice: return "Замечены"
+        case .houseSearch: return "Ищут дом"
+        }
+    }
+}
+
+enum Status: CaseIterable {
+    case neutral
+    case notice
+    case houseSearch
+    case stolen
+    case lost
+    
+    var title: String {
+        switch self {
+        case .neutral: return "Нейтральный"
+        case .notice: return "Замечен"
+        case .houseSearch: return "Ищет дом"
+        case .stolen: return "Украден"
+        case .lost: return "Утерян"
+        }
+    }
+    
+    var placeDescription: String {
+        switch self {
+        case .lost: return "Утерян"
+        case .stolen: return "Украден"
+        case .notice: return "Обнаружен"
+        case .houseSearch: return "Место жительства"
+        case .neutral: return "Место жительства"
+        }
+    }
 }
 
 enum UserAction {
@@ -107,7 +149,6 @@ enum PlaceDescription {
     static let stolen = "Украден"
     static let lost = "Утерян"
     static let notice = "Обнаружен"
-    static let found = "Найден"
 }
 
 enum Segue: CaseIterable {
@@ -120,8 +161,8 @@ enum DBCategory {
     static let pets = "pets"
     static let posts = "posts"
     static let photos = "photos"
-    static let myPets = "myPets"
-    static let myPosts = "myPosts"
+    static let myPetsId = "myPetsId"
+    static let myPostsId = "myPostsId"
     static let petStatus = "status"
     static let contact = "contact"
     static let name = "name"
@@ -164,6 +205,7 @@ enum NavigationTitle {
     static let petNotice = "Обнаружен питомец"
     static let petHouseSearch = "Питомец ищет дом"
     static let myPet = "Мой питомец"
+    static let infoAboutPet = "Информация о питомце"
     static let myPets = "Мои питомцы"
     static let myPosts = "Мои посты"
     static let createPost = "Создание поста"
@@ -172,12 +214,6 @@ enum NavigationTitle {
     static let settings = "Настройки"
     static let petQRCode = "QR-код питомца"
     static let myData = "Мои данные"
-}
-
-enum PetStatus {
-    static let normal = "Нормальный"
-    static let stolen = "Украден"
-    static let lost = "Утерян"
 }
 
 enum Menu: String {

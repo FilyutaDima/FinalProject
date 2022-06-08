@@ -22,12 +22,12 @@ class GridItemCell: UICollectionViewCell {
     @IBOutlet weak var addressLabel: UILabel!
     @IBOutlet weak var dateLabel: UILabel!
     
-    func configure(with post: Post) {
+    func configure(with post: Entry) {
         
         addressLabel.text = post.address.addressString
         dateLabel.text = post.date.convertToString()
         
-        guard let photoUrl = post.pet.arrayPhotoUrl.first else { return }
+        guard let photoUrl = post.arrayPhotoUrl.first else { return }
         
         fetchPetPhoto(with: photoUrl)
         

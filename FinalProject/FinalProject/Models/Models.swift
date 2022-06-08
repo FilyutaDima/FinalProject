@@ -8,10 +8,16 @@
 import Foundation
 import UIKit
 
-protocol Entry {}
-
-struct Pet: Entry, Codable {
+struct User: Codable {
     let uid: String
+    let contact: Contact
+    var myPetsId: [String: String]?
+    var myPostsId: [String: String]?
+}
+
+struct Entry: Codable {
+    let uid: String
+    let ownerId: String?
     let type: String
     let name: String?
     let breed: String?
@@ -21,17 +27,10 @@ struct Pet: Entry, Codable {
     let history: String?
     let character: String?
     let arrayPhotoUrl: [String]
-    let petOwnerContact: Contact?
-    var status: String = PetStatus.normal
-}
-
-struct Post: Entry, Codable {
-    let uid: String
-    let pet: Pet
+    let contact: Contact
+    var status: String = Status.neutral.title
     var date = Date()
     let address: Address
-    let contact: Contact
-    let isStolen: Bool
 }
 
 struct Address: Codable {
@@ -48,11 +47,4 @@ struct Contact: Codable {
 struct PhoneNumber: Codable {
     let code: String
     let number: String
-}
-
-struct User: Codable {
-    let uid: String
-    let contact: Contact
-    var myPets: [String: Pet]?
-    var myPosts: [String: Post]?
 }

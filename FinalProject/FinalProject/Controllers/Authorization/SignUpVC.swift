@@ -77,7 +77,7 @@ class SignUpVC: BaseVC{
                    let self = self {
                     let phoneNumber = PhoneNumber(code: self.phoneCode, number: self.phoneNumber)
                     let contact = Contact(name: self.userName, phoneNumber: phoneNumber)
-                    let user = User(uid: result.user.uid, contact: contact, myPets: nil, myPosts: nil)
+                    let user = User(uid: result.user.uid, contact: contact/*, myPetsId: [], myPostsId: []*/)
                     let userDict = try? FirebaseDataEncoder().encode(user)
                 
                     Reference.users.child(result.user.uid).setValue(userDict)

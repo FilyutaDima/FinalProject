@@ -27,6 +27,8 @@ class CreatePetVC: BaseVC {
     @IBOutlet weak var petNameTextField: UITextField!
     @IBOutlet weak var ageTextField: UITextField!
     @IBOutlet weak var breedTextField: UITextField!
+    @IBOutlet weak var placeDescriptionLabel: UILabel!
+    @IBOutlet final weak var addressTextField: UITextField!
     @IBOutlet weak var photosCollectionView: UICollectionView!
     @IBOutlet weak var contactNameTextField: UITextField!
     @IBOutlet weak var countryFlagImageView: UIImageView!
@@ -51,6 +53,7 @@ class CreatePetVC: BaseVC {
     var nextIndexPath: IndexPath?
     var user: User?
     private let userId = UserSingleton.user().getId()
+    private var address: Address?
     
     private var photos = [UIImage]()
     
@@ -115,7 +118,8 @@ class CreatePetVC: BaseVC {
         
         guard let contactName = contactNameTextField.text,
               let number = phoneNumberTextField.text,
-              let code = countryCodeLabel.text else {
+              let code = countryCodeLabel.text,
+              let address = address else {
             
             onStopDownloading()
             return
@@ -133,7 +137,7 @@ class CreatePetVC: BaseVC {
                 self.onStopDownloading()
                 print("Function: \(#function), line: \(#line), error: \(error.localizedDescription)")
             case .success(let arrayPhotoUrl):
-                let pet = self.configurePet(arrayPhotoUrl: arrayPhotoUrl, contact: contact)
+                let pet = self.configureEntry(arrayPhotoUrl: arrayPhotoUrl, address: address, contact: contact)
                 self.upload(pet)
             }
         }
@@ -152,25 +156,28 @@ class CreatePetVC: BaseVC {
         }
     }
     
-    private func configurePet(arrayPhotoUrl: [String], contact: Contact) -> Pet {
+    private func configureEntry(arrayPhotoUrl: [String],
+                                address: Address,
+                                contact: Contact) -> Entry {
         
         let gender = Gender.allCases[genderSC.selectedSegmentIndex]
         let animalType = AnimalType.allCases[animalTypeSC.selectedSegmentIndex]
         let name = petNameTextField.text ?? ""
         let breed = breedTextField.text ?? ""
         let age = ageTextField.text ?? ""
-        
-        return Pet(uid: UUID().uuidString,
-                   type: animalType.rawValue,
-                   name: name.isEmpty ? Constants.noName : name,
-                   breed: breed.isEmpty ? Constants.noBreed : breed,
-                   gender: gender.rawValue,
-                   age: age.isEmpty ? Constants.noAge : age,
-                   specialSigns: specialSignsTextView.text,
-                   history: petHistoryTextView.text,
-                   character: characterTextView.text,
-                   arrayPhotoUrl: arrayPhotoUrl,
-                   petOwnerContact: contact)
+
+        return Entry(uid: UUID().uuidString,
+                     ownerId: UserSingleton.user().getId(),
+                     type: animalType.rawValue,
+                     name: name.isEmpty ? Constants.noName : name,
+                     breed: breed.isEmpty ? Constants.noBreed : breed,
+                     gender: gender.rawValue,
+                     age: age.isEmpty ? Constants.noAge : age,
+                     specialSigns: specialSignsTextView.text,
+                     history: petHistoryTextView.text,
+                     character: characterTextView.text,
+                     arrayPhotoUrl: arrayPhotoUrl,
+                     contact: contact, address: address)
     }
     
     private func getImage(fromSourceType sourceType: UIImagePickerController.SourceType) {
@@ -184,9 +191,9 @@ class CreatePetVC: BaseVC {
         }
     }
     
-    private func upload(_ pet: Pet) {
+    private func upload(_ pet: Entry) {
    
-        NetworkManager.uploadData(reference: Reference.users, pathValues: [userId, DBCategory.myPets, pet.uid], object: pet) { [weak self] result in
+        NetworkManager.uploadData(reference: Reference.pets, pathValues: [pet.uid], object: pet) { [weak self] result in
             
             guard let self = self else { return }
             
@@ -195,6 +202,19 @@ class CreatePetVC: BaseVC {
                 self.onStopDownloading()
                 print("Function: \(#function), line: \(#line), error: \(error.localizedDescription)")
             case .success:
+                
+                NetworkManager.uploadData(reference: Reference.users,
+                                          pathValues: [self.userId,
+                                                       DBCategory.myPetsId,
+                                                       pet.uid],
+                                          object: pet.uid) { result in
+                    switch result {
+                    case .success(_):
+                        self.navigationController?.popViewController(animated: true)
+                    case .failure(let error):
+                        print("Function: \(#function), line: \(#line), error: \(error.localizedDescription)")
+                    }
+                }
                 
                 if let updateUI = self.updateUI,
                    let nextIndexPath = self.nextIndexPath {
@@ -238,7 +258,19 @@ class CreatePetVC: BaseVC {
         blurView.isHidden = true
         activityIndicatorView.stopAnimating()
     }
+    
+    @IBAction func showMapTapAction(_ sender: Any) {
+        guard let mapVC = storyboard?.instantiateViewController(withIdentifier: "MapViewController") as? MapViewController else { return }
+  
+        mapVC.getAddress = { address in
+            self.address = address
+            self.addressTextField.text = address.addressString
+        }
+        navigationController?.pushViewController(mapVC, animated: true)
+    }
 }
+
+// MARK: UICollectionViewDataSource
 
 extension CreatePetVC: UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -257,6 +289,8 @@ extension CreatePetVC: UICollectionViewDataSource {
     }
 }
 
+// MARK: UIImagePickerControllerDelegate, UINavigationControllerDelegate
+
 extension CreatePetVC: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
@@ -270,6 +304,8 @@ extension CreatePetVC: UIImagePickerControllerDelegate, UINavigationControllerDe
         photosCollectionView.isHidden = false
     }
 }
+
+// MARK: DeletePhotoDelegate
 
 extension CreatePetVC: DeletePhotoDelegate {
     

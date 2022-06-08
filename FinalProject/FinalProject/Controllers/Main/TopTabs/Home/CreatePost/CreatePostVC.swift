@@ -59,7 +59,7 @@ class CreatePostVC: BaseVC {
     @IBOutlet var textViewCollection: [UITextView]!
     
     var section: Section?
-    var placeholder: Pet?
+    var placeholder: Entry?
     
     private var address: Address?
     private var photos = [UIImage]()
@@ -83,14 +83,10 @@ class CreatePostVC: BaseVC {
         publishButton.setLightTheme(style: .basic)
         isStolenSwitch.setLightTheme()
         
-        separatorViewCollection.forEach { $0.setSeparatorStyle()
-        }
+        separatorViewCollection.forEach { $0.setSeparatorStyle() }
         textFieldCollection.forEach { $0.setLightTheme() }
         textViewCollection.forEach { $0.setLightTheme() }
-        titleLabelCollection.forEach {
-            $0.setLightTheme(viewStyle: .basic, fontStyle: .bodySemiBold)
-        }
-        
+        titleLabelCollection.forEach { $0.setLightTheme(viewStyle: .basic, fontStyle: .bodySemiBold) }
     }
     
     private func setupCollectionView() {
@@ -153,11 +149,21 @@ class CreatePostVC: BaseVC {
             return
         }
         
+        var status = ""
+        switch section {
+        case .lost:
+            status = isStolenSwitch.isOn ? Status.stolen.title : Status.lost.title
+        case .notice:
+            status = Status.notice.title
+        case .houseSearch:
+            status = Status.houseSearch.title
+        default: return 
+        }
+        
         let phoneNumber = PhoneNumber(code: code, number: number)
         let contact = Contact(name: contactName,
                               phoneNumber: phoneNumber)
                 
-        
         NetworkManager.uploadPhotos(photos: photos) { [weak self] result in
             guard let self = self else { return }
             
@@ -171,36 +177,39 @@ class CreatePostVC: BaseVC {
                 guard let section = self.section,
                       let address = self.address else { return }
                 
-                let pet = self.configurePet(arrayPhotoUrl: arrayPhotoUrl)
-                let post = self.configurePost(pet: pet, address: address, contact: contact)
-                    
-                NetworkManager.uploadData(reference: Reference.posts,
-                                          pathValues: [section.rawValue, post.uid],
-                                          object: post) { result in
+                let post = self.configurePost(arrayPhotoUrl: arrayPhotoUrl, address: address, contact: contact, status: status)
+                  
+                self.upload(post, into: section)
+            }
+        }
+    }
+    
+    private func upload(_ post: Entry, into section: Section) {
+        
+        NetworkManager.uploadData(reference: Reference.posts,
+                                  pathValues: [section.title, post.uid],
+                                  object: post) { result in
+            switch result {
+            case .success(_):
+                
+                NetworkManager.uploadData(reference: Reference.users,
+                                          pathValues: [UserSingleton.user().getId(),
+                                                       DBCategory.myPostsId,
+                                                       post.uid],
+                                          object: post.uid) { result in
                     switch result {
                     case .success(_):
-                        
-                        
-                        NetworkManager.uploadData(reference: Reference.users,
-                                                  pathValues: [UserSingleton.user().getId(),
-                                                               DBCategory.myPosts,
-                                                               post.uid],
-                                                  object: post) { result in
-                            switch result {
-                            case .success(_):
-                                self.navigationController?.popViewController(animated: true)
-                            case .failure(let error):
-                                print("Function: \(#function), line: \(#line), error: \(error.localizedDescription)")
-                            }
-                        }
-                        
                         self.navigationController?.popViewController(animated: true)
-                        
                     case .failure(let error):
-                        self.onStopDownloading()
                         print("Function: \(#function), line: \(#line), error: \(error.localizedDescription)")
                     }
                 }
+                
+                self.navigationController?.popViewController(animated: true)
+                
+            case .failure(let error):
+                self.onStopDownloading()
+                print("Function: \(#function), line: \(#line), error: \(error.localizedDescription)")
             }
         }
     }
@@ -239,7 +248,10 @@ class CreatePostVC: BaseVC {
         }
     }
     
-    private func configurePet(arrayPhotoUrl: [String]) -> Pet {
+    private func configurePost(arrayPhotoUrl: [String],
+                                address: Address,
+                                contact: Contact,
+                                status: String) -> Entry {
         
         let gender = Gender.allCases[genderSC.selectedSegmentIndex]
         let animalType = AnimalType.allCases[animalTypeSC.selectedSegmentIndex]
@@ -247,29 +259,20 @@ class CreatePostVC: BaseVC {
         let breed = breedTextField.text ?? ""
         let age = ageTextField.text ?? ""
 
-        return Pet(uid: UUID().uuidString,
-                   type: animalType.rawValue,
-                   name: name.isEmpty ? Constants.noName : name,
-                   breed: breed.isEmpty ? Constants.noBreed : breed,
-                   gender: gender.rawValue,
-                   age: age.isEmpty ? Constants.noAge : age,
-                   specialSigns: specialSignsTextView.text,
-                   history: petHistoryTextView.text,
-                   character: characterTextView.text,
-                   arrayPhotoUrl: arrayPhotoUrl,
-                   petOwnerContact: nil)
-    }
-    
-    private func configurePost(pet: Pet,
-                               address: Address,
-                               contact: Contact) -> Post {
-        
-            return Post(
-                uid: UUID().uuidString,
-                pet: pet,
-                address: address,
-                contact: contact,
-                isStolen: isStolenSwitch.isOn)
+        return Entry(uid: UUID().uuidString,
+                     ownerId: nil,
+                     type: animalType.rawValue,
+                     name: name.isEmpty ? Constants.noName : name,
+                     breed: breed.isEmpty ? Constants.noBreed : breed,
+                     gender: gender.rawValue,
+                     age: age.isEmpty ? Constants.noAge : age,
+                     specialSigns: specialSignsTextView.text,
+                     history: petHistoryTextView.text,
+                     character: characterTextView.text,
+                     arrayPhotoUrl: arrayPhotoUrl,
+                     contact: contact,
+                     status: status,
+                     address: address)
     }
     
     private func getImage(fromSourceType sourceType: UIImagePickerController.SourceType) {
@@ -328,6 +331,8 @@ class CreatePostVC: BaseVC {
     }
 }
 
+// MARK: UICollectionViewDataSource
+
 extension CreatePostVC: UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         photos.count
@@ -345,6 +350,8 @@ extension CreatePostVC: UICollectionViewDataSource {
     }
 }
 
+// MARK: UIImagePickerControllerDelegate, UINavigationControllerDelegate
+
 extension CreatePostVC: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
@@ -358,6 +365,8 @@ extension CreatePostVC: UIImagePickerControllerDelegate, UINavigationControllerD
         photosCollectionView.isHidden = false
     }
 }
+
+// MARK: UICollectionViewDelegateFlowLayout
 
 extension CreatePostVC: UICollectionViewDelegateFlowLayout {
     
@@ -377,6 +386,8 @@ extension CreatePostVC: UICollectionViewDelegateFlowLayout {
         return 5
     }
 }
+
+// MARK: DeletePhotoDelegate
 
 extension CreatePostVC: DeletePhotoDelegate {
     

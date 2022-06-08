@@ -14,17 +14,13 @@ class GalleryItemVC: UIViewController {
         startAnimatingIndicatorView()
     }
     
-//    override func viewWillAppear(_ animated: Bool) {
-//        super.viewWillAppear(animated)
-//        showNavigationBar(animated: false, translucent: true)
-//    }
-    
     @IBOutlet weak var indicatorView: UIActivityIndicatorView!
     @IBOutlet weak var backgroundImageView: UIImageView!
     @IBOutlet weak var photoImageView: UIImageView!
     
     private func configureImageViews(with photo: UIImage) {
         
+        backgroundImageView.backgroundColor = SystemColor.lightOrange
         photoImageView.image = photo
         backgroundImageView.image = photo
     }

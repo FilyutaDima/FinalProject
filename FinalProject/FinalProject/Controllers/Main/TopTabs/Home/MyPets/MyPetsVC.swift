@@ -9,14 +9,14 @@ import UIKit
 import Firebase
 
 protocol UpdateUIDelegate: AnyObject {
-    func insert(item: Pet, at indexPath: IndexPath)
+    func insert(item: Entry, at indexPath: IndexPath)
 }
 
 protocol MyPetMenuActionDelegare: AnyObject {
-    func showPetQRCode(_ pet: Pet)
+    func showPetQRCode(_ pet: Entry)
     func deletePet(at tag: Int)
-    func reportMissing(_ pet: Pet)
-    func changePetStatus(_ pet: Pet, _ status: String, _ tag: Int)
+    func reportMissing(_ pet: Entry)
+    func changePetStatus(_ pet: Entry, _ status: String, _ tag: Int)
 }
 
 class MyPetsVC: UIViewController {
@@ -31,7 +31,7 @@ class MyPetsVC: UIViewController {
     
     @IBOutlet weak var collectionView: UICollectionView!
     
-    private var myPets = [Pet]()
+    private var myPets = [Entry]()
     private var userId = UserSingleton.user().getId()
     private var user: User?
     
@@ -46,28 +46,52 @@ class MyPetsVC: UIViewController {
         collectionView.dataSource = self
     }
     
-    func fetchUser() {
+    private func fetchUser() {
         
-        let reference = Reference.users.child(userId)
-        NetworkManager.downloadData(reference: reference, modelType: User.self) { [weak self] result in
-            
+        NetworkManager.downloadData(reference: Reference.users,
+                                    pathValues: [userId],
+                                    modelType: User.self) { [weak self] result in
+
             guard let self = self else { return }
-            
+
             switch result {
             case .failure(let error):
                 print("Function: \(#function), line: \(#line), error: \(error.localizedDescription)")
             case .success(let user):
-                
+
                 self.user = user
                 
-                if let myPets = user.myPets {
-                    self.myPets = Array(myPets.values)
-                    self.collectionView.reloadData()
+                guard let myPetsIdDict = user.myPetsId else { return }
+                let myPetsId = Array(myPetsIdDict.values) as [String]
+                
+                self.fetchMyPets(by: myPetsId)
+            }
+        }
+    }
+    
+    private func fetchMyPets(by myPetsId: [String]) {
+        
+        for petId in myPetsId {
+            
+            NetworkManager.downloadData(reference: Reference.pets,
+                                        pathValues: [petId],
+                                        modelType: Entry.self) { [weak self] result in
+                
+                guard let self = self else { return }
+                
+                switch result {
+                case .failure(let error):
+                    print("Function: \(#function), line: \(#line), error: \(error.localizedDescription)")
+                case .success(let pet):
+                    self.myPets.append(pet)
+                    self.collectionView.insertItems(at: [IndexPath(row: self.myPets.count, section: 0)])
                 }
             }
         }
     }
 }
+
+// MARK: UICollectionViewDelegate
 
 extension MyPetsVC: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
@@ -85,6 +109,8 @@ extension MyPetsVC: UICollectionViewDelegate {
         }
     }
 }
+
+// MARK: UICollectionViewDataSource
 
 extension MyPetsVC: UICollectionViewDataSource {
     
@@ -118,6 +144,8 @@ extension MyPetsVC: UICollectionViewDataSource {
     }
 }
 
+// MARK: UICollectionViewDelegateFlowLayout
+
 extension MyPetsVC: UICollectionViewDelegateFlowLayout {
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
@@ -141,17 +169,21 @@ extension MyPetsVC: UICollectionViewDelegateFlowLayout {
     }
 }
 
+// MARK: UpdateUIDelegate
+
 extension MyPetsVC: UpdateUIDelegate {
-    func insert(item: Pet, at indexPath: IndexPath) {
+    func insert(item: Entry, at indexPath: IndexPath) {
         myPets.append(item)
         collectionView.insertItems(at: [indexPath])
     }
 }
 
+// MARK: MyPetMenuActionDelegare
+
 extension MyPetsVC: MyPetMenuActionDelegare {
     
     
-    func showPetQRCode(_ pet: Pet) {
+    func showPetQRCode(_ pet: Entry) {
         goToMyPetQRCodeVC(with: pet)
     }
     
@@ -159,15 +191,13 @@ extension MyPetsVC: MyPetMenuActionDelegare {
         deleteMyPet(at: tag)
     }
     
-    func reportMissing(_ pet: Pet) {
+    func reportMissing(_ pet: Entry) {
         goToCreatePostVC(with: pet)
     }
     
-    func changePetStatus(_ pet: Pet, _ status: String, _ tag: Int) {
-        NetworkManager.uploadData(reference: Reference.users,
-                                  pathValues: [userId,
-                                               DBCategory.myPets,
-                                               pet.uid,
+    func changePetStatus(_ pet: Entry, _ status: String, _ tag: Int) {
+        NetworkManager.uploadData(reference: Reference.pets,
+                                  pathValues: [pet.uid,
                                                DBCategory.petStatus],
                                   object: status) { [weak self] result in
             switch result {
@@ -179,13 +209,13 @@ extension MyPetsVC: MyPetMenuActionDelegare {
         }
     }
     
-    private func goToMyPetQRCodeVC(with pet: Pet) {
+    private func goToMyPetQRCodeVC(with pet: Entry) {
         guard let destVC = storyboard?.instantiateViewController(withIdentifier: "MyPetQRCodeVC") as? MyPetQRCodeVC else { return }
         destVC.pet = pet
         navigationController?.pushViewController(destVC, animated: true)
     }
     
-    private func goToCreatePostVC(with pet: Pet) {
+    private func goToCreatePostVC(with pet: Entry) {
         guard let destVC = storyboard?.instantiateViewController(withIdentifier: "CreatePostVC") as? CreatePostVC else { return }
         destVC.placeholder = pet
         navigationController?.pushViewController(destVC, animated: true)
@@ -197,15 +227,28 @@ extension MyPetsVC: MyPetMenuActionDelegare {
      
         let pet = myPets[currentIndexPath.row]
         
-        NetworkManager.deleteData(reference: Reference.users.child(userId).child(DBCategory.myPets).child(pet.uid)) { [weak self] result in
+        NetworkManager.deleteData(reference: Reference.pets,
+                                  pathValues: [pet.uid]) { [weak self] result in
             guard let self = self else { return }
             
             switch result {
             case .failure(let error):
                 print("Function: \(#function), line: \(#line), error: \(error.localizedDescription)")
             case .success(_):
-                self.myPets.remove(at: currentIndexPath.row)
-                self.collectionView.deleteItems(at: [currentIndexPath])
+                
+                NetworkManager.deleteData(reference: Reference.users,
+                                          pathValues: [self.userId,
+                                                       DBCategory.myPetsId,
+                                                       pet.uid]) { result in
+                    switch result {
+                    case .failure(let error):
+                        print("Function: \(#function), line: \(#line), error: \(error.localizedDescription)")
+                    case .success(_):
+                        self.myPets.remove(at: currentIndexPath.row)
+                        self.collectionView.deleteItems(at: [currentIndexPath])
+                    }
+                }
+                
             }
         }
     }

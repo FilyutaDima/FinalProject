@@ -26,15 +26,16 @@ class MyPostsVC: BaseVC {
     
     private var userId = UserSingleton.user().getId()
     private var user: User?
-    var myPosts = [Post]()
+    var myPosts = [Entry]()
     
     private func registerCell() {
         gridView.register(UINib(nibName: ReuseIdentifierCell.gridItem, bundle: nil), forCellWithReuseIdentifier: ReuseIdentifierCell.gridItem)
     }
     
     func fetchUser() {
-        let reference = Reference.users.child(userId)
-        NetworkManager.downloadData(reference: reference, modelType: User.self) { [weak self] result in
+        NetworkManager.downloadData(reference: Reference.users,
+                                    pathValues: [userId],
+                                    modelType: User.self) { [weak self] result in
             
             guard let self = self else { return }
             
@@ -45,11 +46,12 @@ class MyPostsVC: BaseVC {
                 
                 self.user = user
                 
-                if let myPosts = user.myPosts {
-                    self.myPosts = Array(myPosts.values)
-                    self.gridView.reloadData()
-                }
             }
+        }
+    }
+    
+    private func fetchMyPosts(by arrayMyPostsId: [String]) {
+        for id in arrayMyPostsId {
         }
     }
 }
