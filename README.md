@@ -41,7 +41,8 @@ Depending on the selected category, the set of fields on the form is different.
 
 # My Pets
 
-![myPets](https://user-images.githubusercontent.com/23504718/170181328-9a41c50d-e087-48c3-bac7-0a48a856655d.png)
+![Безымянный-1](https://user-images.githubusercontent.com/23504718/172721529-465a95c8-106b-452e-bed8-4c063c73b8a5.png)
+
 
 # Backend
 
